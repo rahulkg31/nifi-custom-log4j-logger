@@ -18,5 +18,5 @@ A NiFi processor that logs FlowFile content/attribute using Log4j with customiza
 
 ### Setup
 
-Add the `nifi-custom-log4j-logger-nar/target/nifi-custom-log4j-logger-nar-1.0.nar` file in the `lib/` directory.
+Add the `nifi-custom-log4j-logger-nar/target/nifi-custom-log4j-logger-nar-1.0.nar` file in the `lib/` directory of Nifi setup.
 
