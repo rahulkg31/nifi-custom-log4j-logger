@@ -30,7 +30,7 @@
 	<properties>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
-		 <enforcer.skip>true</enforcer.skip>
+		<enforcer.skip>true</enforcer.skip>
 	</properties>
 
 	<dependencies>
@@ -41,7 +41,6 @@
 		<dependency>
 			<groupId>org.apache.nifi</groupId>
 			<artifactId>nifi-utils</artifactId>
-			<version>1.18.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>

@@ -72,6 +72,7 @@ public class Log4jLogger extends AbstractProcessor {
 	private String type;
 	private String source;
 	private String[] attributes;
+	private LoggerContext loggerContext =  new LoggerContext("Log4jLogger");
 	private Logger logger;
 	private String flowfileAttributes;
 
@@ -89,7 +90,8 @@ public class Log4jLogger extends AbstractProcessor {
 		relationships.add(SUCCESS);
 		relationships.add(FAILURE);
 		this.relationships = Collections.unmodifiableSet(relationships);
-	}
+	}	
+	
 
 	@Override
 	public Set<Relationship> getRelationships() {
@@ -101,8 +103,9 @@ public class Log4jLogger extends AbstractProcessor {
 		return descriptors;
 	}
 
-	@OnScheduled
-	public void onScheduled(final ProcessContext context) throws IOException {
+	 
+	@OnScheduled	
+	public void onScheduled(final ProcessContext context) throws IOException {	
 		// prefix
 		prefix = context.getProperty(PREFIX).getValue();
 		prefix = (prefix == null || "".equals(prefix)) ? "" : "[" + prefix + "]";
@@ -121,32 +124,36 @@ public class Log4jLogger extends AbstractProcessor {
 		String log4jConfiguration = context.getProperty(LOG4J_CONFIGURATION).getValue();
 		ByteArrayInputStream inputStream = new ByteArrayInputStream(
 				log4jConfiguration.getBytes(StandardCharsets.UTF_8));
-		LoggerContext loggerContext = Configurator.initialize(null, new ConfigurationSource(inputStream));
-		logger = (Logger) loggerContext.getLogger(Log4jLogger.class);
+		loggerContext.close();
+		loggerContext = Configurator.initialize(null, new ConfigurationSource(inputStream));
+		logger = (Logger) loggerContext.getLogger(Log4jLogger.class);				
+		logger.info("Log4jLogger processor initialized.....");			
 	}
+
 
 	@Override
 	public void onTrigger(final ProcessContext context, final ProcessSession session) throws ProcessException {
 		FlowFile flowFile = session.get();
 		if (flowFile == null) {
 			return;
-		}
-
-		// attribute string
-		flowfileAttributes = "";
-		if ("flowfile-attribute".equals(source) || "flowfile-content+flowfile-attribute".equals(source)) {
-			flowfileAttributes = "flowfile-attribute: " + flowFile.getAttributes().toString();
-		} else if (attributes != null) {
-			Map<String, String> map = flowFile.getAttributes();
-			Map<String, String> newMap = new HashMap<>();
-			for (int i = 0; i < attributes.length; i++) {
-				String attribute = attributes[i];
-				newMap.put(attribute, map.get(attribute));
-			}
-			flowfileAttributes = "flowfile-attribute: " + newMap.toString();
-		}
+		}				
 
 		try {
+			// attribute string
+			flowfileAttributes = "";
+			if ("flowfile-attribute".equals(source) || "flowfile-content+flowfile-attribute".equals(source)) {
+				flowfileAttributes = "flowfile-attribute: " + flowFile.getAttributes().toString();
+			} else if (attributes != null) {
+				Map<String, String> map = flowFile.getAttributes();
+				Map<String, String> newMap = new HashMap<>();
+				for (int i = 0; i < attributes.length; i++) {
+					String attribute = attributes[i];
+					newMap.put(attribute, map.get(attribute));
+				}
+				flowfileAttributes = "flowfile-attribute: " + newMap.toString();
+			}
+			
+			// read
 			session.read(flowFile, new InputStreamCallback() {
 				@Override
 				public void process(InputStream rawIn) throws IOException {
@@ -165,7 +172,7 @@ public class Log4jLogger extends AbstractProcessor {
 				}
 			});
 		} catch (final ProcessException pe) {
-			getLogger().error("Failed to process {} data due to {}; transferring to failure",
+			logger.error("Failed to process {} data due to {}; transferring to failure",
 					new Object[] { flowFile, pe });
 			session.transfer(flowFile, FAILURE);
 			return;
